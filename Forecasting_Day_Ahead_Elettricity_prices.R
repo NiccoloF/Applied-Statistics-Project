@@ -3,8 +3,8 @@
 ################################################################################
 
 # Import data_set 
-Elettricity_price <- read.csv("./Data_set/ml_data.csv", header = TRUE)
-head(Elettricity_price)
-dim(Elettricity_price)
-str(Elettricity_price)
-
+Electricity_price <- read.csv("./Data_set/ml_data.csv", header = TRUE)
+head(Electricity_price)
+dim(Electricity_price)
+str(Electricity_price)
+summary(Electricity_price)
