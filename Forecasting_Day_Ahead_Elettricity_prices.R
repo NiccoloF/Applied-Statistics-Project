@@ -8,3 +8,12 @@ head(Electricity_price)
 dim(Electricity_price)
 str(Electricity_price)
 summary(Electricity_price)
+
+# extract 2018-2019
+
+Electricity_price[1:17520,] -> test
+head(test)
+dim(test)
+str(test)
+summary(test)
+dimnames(test)
