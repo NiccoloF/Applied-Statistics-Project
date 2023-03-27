@@ -23,7 +23,7 @@ train_set <- Electricity_price[train,]
 test_set <- Electricity_price[-train,]
 
 # Fit a linear model
-lm.fit <- lm(Price ~ ., data = train_set)
+lm.fit <- lm(dam ~ ., data = train_set)
 summary(lm.fit)
 
 # Predictions
@@ -44,7 +44,7 @@ lm.rmse
 
 # Fit a random forest model
 library(randomForest)
-rf.fit <- randomForest(Price ~ ., data = train_set, ntree = 1000)
+rf.fit <- randomForest(dam ~ ., data = train_set, ntree = 1000)
 rf.fit
 
 # Predictions
@@ -65,7 +65,7 @@ rf.rmse
 
 # Fit a gradient boosting model
 library(gbm)
-gbm.fit <- gbm(Price ~ ., data = train_set, distribution = "gaussian", 
+gbm.fit <- gbm(dam ~ ., data = train_set, distribution = "gaussian", 
                n.trees = 1000, interaction.depth = 4, shrinkage = 0.01)
 gbm.fit
 
@@ -87,7 +87,7 @@ gbm.rmse
 
 # Fit a neural network model
 library(neuralnet)
-nn.fit <- neuralnet(Price ~ ., data = train_set, hidden = 5, 
+nn.fit <- neuralnet(dam ~ ., data = train_set, hidden = 5, 
                     linear.output = FALSE)
 nn.fit
 
@@ -109,7 +109,7 @@ nn.rmse
 
 # Fit a support vector machine model
 library(e1071)
-svm.fit <- svm(Price ~ ., data = train_set)
+svm.fit <- svm(dam ~ ., data = train_set)
 svm.fit
 
 # Predictions
