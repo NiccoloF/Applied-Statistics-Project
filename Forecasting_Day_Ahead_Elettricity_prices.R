@@ -8,4 +8,3 @@ head(Electricity_price)
 dim(Electricity_price)
 str(Electricity_price)
 summary(Electricity_price)
-# prova rossana
