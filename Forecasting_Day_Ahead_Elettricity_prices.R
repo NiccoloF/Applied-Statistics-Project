@@ -37,7 +37,7 @@ colnames(lm.pred) <- c("Predicted", "Actual")
 head(lm.pred)
 
 # Plot predictions
-x11() #prova
+x11()
 plot(lm.pred$Actual, lm.pred$Predicted, xlab = "Actual", ylab = "Predicted")
 abline(0, 1)
 
