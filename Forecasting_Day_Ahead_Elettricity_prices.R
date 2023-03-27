@@ -9,6 +9,8 @@ head(Electricity_price)
 dim(Electricity_price)
 str(Electricity_price)
 summary(Electricity_price)
+# select rows fro which rowname is less that "2019-12-31 23:00:00"
+Electricity_price <- Electricity_price[Electricity_price$index < "2019-12-31 23:00:00",]
 
 colnames(Electricity_price)
 colnames(Electricity_price)[1] <- "Price"
