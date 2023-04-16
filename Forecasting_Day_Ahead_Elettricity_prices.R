@@ -39,9 +39,11 @@ x11()
 par(mar = c(1, 1, 1, 1))
 layout(matrix(c(2, 3, 1, 3), 2, byrow = TRUE))
 plot(pca, las = 2, main = "Principal components")
-barplot(sapply(data_18_19, sd)^2, las = 2,
-        main = "Original Variables",
-        ylab = "Variances")
+barplot(sapply(data_18_19, sd)^2,
+    las = 2,
+    main = "Original Variables",
+    ylab = "Variances"
+)
 plot(cumsum(pca$sd^2) / sum(pca$sd^2),
     type = "b", axes = FALSE, xlab = "number of components",
     ylab = "contribution to the total variance", ylim = c(0, 1)
@@ -50,8 +52,10 @@ abline(h = 1, col = "blue")
 abline(h = 0.8, lty = 2, col = "blue")
 box()
 axis(2, at = 0:10 / 10, labels = 0:10 / 10)
-axis(1, at = seq_len(ncol(data_18_19)),
-    labels = seq_len(ncol(data_18_19)), las = 2)
+axis(1,
+    at = seq_len(ncol(data_18_19)),
+    labels = seq_len(ncol(data_18_19)), las = 2
+)
 
 # scale the data
 data_18_19_sd <- scale(data_18_19)
@@ -77,9 +81,11 @@ x11()
 par(mar = c(1, 1, 1, 1))
 layout(matrix(c(2, 3, 1, 3), 2, byrow = TRUE))
 plot(pca_sd, las = 2, main = "Principal components")
-barplot(sapply(data_18_19_sd, sd)^2, las = 2,
-        main = "Original Variables",
-        ylab = "Variances")
+barplot(sapply(data_18_19_sd, sd)^2,
+    las = 2,
+    main = "Original Variables",
+    ylab = "Variances"
+)
 plot(cumsum(pca_sd$sd^2) / sum(pca_sd$sd^2),
     type = "b", axes = FALSE, xlab = "number of components",
     ylab = "contribution to the total variance", ylim = c(0, 1)
@@ -88,8 +94,10 @@ abline(h = 1, col = "blue")
 abline(h = 0.8, lty = 2, col = "blue")
 box()
 axis(2, at = 0:10 / 10, labels = 0:10 / 10)
-axis(1, at = seq_len(ncol(data_18_19_sd)),
-    labels = seq_len(ncol(data_18_19_sd)), las = 2)
+axis(1,
+    at = seq_len(ncol(data_18_19_sd)),
+    labels = seq_len(ncol(data_18_19_sd)), las = 2
+)
 
 # split second data frame into train and test randomly
 set.seed(2108)
