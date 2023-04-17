@@ -70,13 +70,13 @@ dam_19_monthly <- dam_19_monthly$x - mean(data_19$dam)
 
 # plot the monthly mean of dam in 2018 and 2019 in the same graph
 x11()
-plot(dam_18, type = "l",
+plot(dam_18_monthly, type = "l",
     col = "blue",
     main = "Monthly mean of dam in 2018 and 2019",
     xlab = "Month", ylab = "Dam",
     ylim = c(40, 80),
     lwd = 5)
-lines(dam_19, col = "red", lwd = 5)
+lines(dam_19_monthly, col = "red", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
     col = c("blue", "red"), lty = 1, cex = 0.8,
     lwd = 5
