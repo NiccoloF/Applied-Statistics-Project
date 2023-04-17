@@ -78,7 +78,8 @@ plot(dam_18, type = "l",
     lwd = 5)
 lines(dam_19, col = "red", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
-    col = c("blue", "red"), lty = 1, cex = 0.8
+    col = c("blue", "red"), lty = 1, cex = 0.8,
+    lwd = 5
 )
 
 # compute the dayly mean of dam in 2018
@@ -100,7 +101,8 @@ plot(dam_18_weekday, type = "l",
     lwd = 5)
 lines(dam_19_weekday, col = "red", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
-    col = c("blue", "red"), lty = 1, cex = 0.8
+    col = c("blue", "red"), lty = 1, cex = 0.8,
+    lwd = 5
 )
 
 # compute the hourly of dam in 2018
@@ -122,7 +124,8 @@ plot(dam_18_hourly, type = "l",
     lwd = 5)
 lines(dam_19_hourly, col = "red", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
-    col = c("blue", "red"), lty = 1, cex = 0.8
+    col = c("blue", "red"), lty = 1, cex = 0.8,
+    lwd = 5
 )
 
 
