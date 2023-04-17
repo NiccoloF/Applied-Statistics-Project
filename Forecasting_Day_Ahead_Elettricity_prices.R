@@ -7,6 +7,7 @@ install.packages("forecast")
 install.packages("tseries")
 install.packages("ggplot2")
 install.packages("ggfortify")
+install.packages("ggpubr")
 install.packages("fpp2")
 install.packages("fpp3")
 install.packages("forecastHybrid")
@@ -21,6 +22,7 @@ library(forecast)
 library(tseries)
 library(ggplot2)
 library(ggfortify)
+library(ggpubr)
 library(fpp2)
 library(fpp3)
 library(forecastHybrid)
@@ -43,10 +45,86 @@ summary(data)
 # take only the first two years of the data set
 data_18_19 <- data[which((rownames(data) >= "2018-01-01 00:00:00" &
     rownames(data) <= "2019-12-31 23:00:00")), ]
-head(data_18_19)
-dim(data_18_19)
-str(data_18_19)
-summary(data_18_19)
+data_18 <- data[which((rownames(data) >= "2018-01-01 00:00:00" &
+    rownames(data) <= "2018-12-31 23:00:00")), ]
+data_19 <- data[which((rownames(data) >= "2019-01-01 00:00:00" &
+    rownames(data) <= "2019-12-31 23:00:00")), ]
+
+# plot the data
+x11()
+par(mar = c(1, 1, 1, 1))
+par(mfcol = c(8, 4))
+for (i in seq_len(ncol(data_18_19))) {
+    plot(data_18_19[, i], type = "l", main = paste("Series", i))
+}
+
+# compute the montlhy mean of dam in 2018
+dam_18_monthly <- aggregate(data_18$dam,
+    by = list(month = dam_18$month), FUN = mean)
+dam_18_monthly <- dam_18_monthly$x - mean(data_18$dam)
+
+# compute the montlhy mean of dam in 2019
+dam_19_monthly <- aggregate(data_19$dam,
+    by = list(month = dam_19$month), FUN = mean)
+dam_19_monthly <- dam_19_monthly$x - mean(data_19$dam)
+
+# plot the monthly mean of dam in 2018 and 2019 in the same graph
+x11()
+plot(dam_18, type = "l",
+    col = "blue",
+    main = "Monthly mean of dam in 2018 and 2019",
+    xlab = "Month", ylab = "Dam",
+    ylim = c(40, 80),
+    lwd = 5)
+lines(dam_19, col = "red", lwd = 5)
+legend("topleft", legend = c("2018", "2019"),
+    col = c("blue", "red"), lty = 1, cex = 0.8
+)
+
+# compute the dayly mean of dam in 2018
+dam_18_weekday <- aggregate(data_18$dam,
+    by = list(day = data_18$weekday), FUN = mean)
+dam_18_weekday <- dam_18_weekday$x - mean(data_18$dam)
+
+# compute the dayly mean of dam in 2019
+dam_19_weekday <- aggregate(data_19$dam,
+    by = list(day = data_19$weekday), FUN = mean)
+dam_19_weekday <- dam_19_weekday$x - mean(data_19$dam)
+
+# plot the dayly mean of dam in 2018 and 2019 in the same graph
+x11()
+plot(dam_18_weekday, type = "l",
+    col = "blue",
+    main = "Dayly mean of dam in 2018 and 2019",
+    xlab = "Day", ylab = "Dam",
+    lwd = 5)
+lines(dam_19_weekday, col = "red", lwd = 5)
+legend("topleft", legend = c("2018", "2019"),
+    col = c("blue", "red"), lty = 1, cex = 0.8
+)
+
+# compute the hourly of dam in 2018
+dam_18_hourly <- aggregate(data_18$dam,
+    by = list(hour = data_18$hour), FUN = mean)
+dam_18_hourly <- dam_18_hourly$x - mean(data_18$dam)
+
+# compute the hourly of dam in 2019
+dam_19_hourly <- aggregate(data_19$dam,
+    by = list(hour = data_19$hour), FUN = mean)
+dam_19_hourly <- dam_19_hourly$x - mean(data_19$dam)
+
+# plot the hourly mean of dam in 2018 and 2019 in the same graph
+x11()
+plot(dam_18_hourly, type = "l",
+    col = "blue",
+    main = "Hourly mean of dam in 2018 and 2019",
+    xlab = "Hour", ylab = "Dam",
+    lwd = 5)
+lines(dam_19_hourly, col = "red", lwd = 5)
+legend("topleft", legend = c("2018", "2019"),
+    col = c("blue", "red"), lty = 1, cex = 0.8
+)
+
 
 # pca on dataset with the first two years
 pca <- princomp(data_18_19, scores = TRUE)
@@ -59,6 +137,12 @@ x11()
 par(mar = c(1, 1, 1, 1))
 par(mfcol = c(8, 4))
 for (i in seq_len(ncol(data_18_19))) {
+    barplot(loads[, i], ylim = c(-1, 1), main = paste("PC", i))
+}
+x11()
+par(mar = c(1, 1, 1, 1))
+par(mfcol = c(2, 5))
+for (i in 1:10) {
     barplot(loads[, i], ylim = c(-1, 1), main = paste("PC", i))
 }
 
@@ -102,6 +186,12 @@ par(mar = c(1, 1, 1, 1))
 par(mfcol = c(8, 4))
 for (i in seq_len(ncol(data_18_19_sd))) {
     barplot(loads_sd[, i], ylim = c(-1, 1), main = paste("PC", i))
+}
+x11()
+par(mar = c(1, 1, 1, 1))
+par(mfcol = c(2, 5))
+for (i in 1:10) {
+    barplot(loads[, i], ylim = c(-1, 1), main = paste("PC", i))
 }
 
 # plot the explained variance
@@ -287,6 +377,11 @@ data_18_19_pca <- predict(pca_sub_sd, data_18_19[, -1])
 data_18_19_pca <- data.frame(data_18_19_pca[, 1:10], data_18_19$dam)
 colnames(data_18_19_pca) <- c(paste("PC", 1:10, sep = ""), "dam")
 head(data_18_19_pca)
+x11()
+par(mar = c(1, 1, 1, 1))
+par(mfrow = c(1, 2))
+boxplot(data_18_19_sd)
+boxplot(data_18_19_pca)
 
 # split the dataset into train and test
 set.seed(2108)
