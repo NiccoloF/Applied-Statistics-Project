@@ -173,9 +173,9 @@ res_norm <- rstandard(lin_model)
 res_stud <- rstudent(lin_model)
 
 # remove outliers and influence points from the dataset
-train <- train[-which(cooks_dist > 4 / (n - p)), ]
-train <- train[-which(abs(res_norm) > 2), ]
-train <- train[-which(abs(res_stud) > 2), ]
+train <- train[-which(cooks_dist < 4 / nrow(train)), ]
+train <- train[-which(abs(res_norm) < 2), ]
+train <- train[-which(abs(res_stud) < 2), ]
 dim(train)
 
 # train a linear regression model
@@ -282,7 +282,7 @@ sum(pca_sub_sd$sdev^2) * 0.8
 cumsum(pca_sub_sd$sdev^2)
 which(cumsum(pca_sub_sd$sdev^2) > sum(pca_sub_sd$sdev^2) * 0.8)[1]
 
-# tranform dataset with the first 10 pc leaving out dam
+# tranform dataset with the first 10 pc as covariates leaving out dam
 data_18_19_pca <- predict(pca_sub_sd, data_18_19[, -1])
 data_18_19_pca <- data.frame(data_18_19_pca[, 1:10], data_18_19$dam)
 colnames(data_18_19_pca) <- c(paste("PC", 1:10, sep = ""), "dam")
@@ -295,8 +295,44 @@ train_pca <- data_18_19_pca[sample(
     0.8 * nrow(data_18_19_pca)
 ), ]
 test_pca <- data_18_19_pca[-which(
-    rownames(data_18_19_pca) %in% rownames(train)
+    rownames(data_18_19_pca) %in% rownames(train_pca)
 ), ]
+
+# train a linear regression model
+lin_model_pca <- lm(dam ~ ., data = train_pca)
+summary(lin_model_pca)
+lin_model_pca <- step(lin_model_pca, direction = "both")
+summary(lin_model_pca)
+
+# predict the test set
+pred_pca <- predict(lin_model_pca, test_pca)
+
+# plot the results
+x11()
+par(mar = c(1, 1, 1, 1))
+plot(test_pca$dam, pred_pca, xlab = "Actual", ylab = "Predicted")
+abline(0, 1, col = "red")
+
+# compute the error
+error_pca <- test_pca$dam - pred_pca
+mean(error_pca)
+sd(error_pca)
+
+# plot the error
+x11()
+par(mar = c(1, 1, 1, 1))
+hist(error_pca, main = "Error", xlab = "Error")
+
+# identify outliers and influence points
+cooks_dist_pca <- cooks.distance(lin_model_pca)
+res_norm_pca <- rstandard(lin_model_pca)
+res_stud_pca <- rstudent(lin_model_pca)
+
+# remove outliers and influence points
+train_pca <- train_pca[-which(cooks_dist_pca > 4 / nrow(train_pca)), ]
+train_pca <- train_pca[-which(abs(res_norm_pca) > 2), ]
+train_pca <- train_pca[-which(abs(res_stud_pca) > 2), ]
+dim(train_pca)
 
 # train a linear regression model
 lin_model_pca <- lm(dam ~ ., data = train_pca)
