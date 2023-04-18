@@ -86,42 +86,42 @@ par(mfcol = c(2, 2))
 boxplot(data_18$dam, data_19$dam, names = c("2018", "2019"),
     horizontal = TRUE,
     main = "Boxplot of dam in 2018 and 2019",
-    xlab = "Year", ylab = "Dam", col = c("blue", "red")
+    xlab = "Year", ylab = "Dam", col = c("#009687", "#FB4B41")
 )
 legend("topleft", legend = c("2018", "2019"),
-    col = c("blue", "red"), lty = 1, cex = 0.8,
+    col = c("#009687", "#FB4B41"), lty = 1, cex = 0.8,
     lwd = 5
 )
 abline(v = mean(data_18$dam), col = "black", lty = 2)
 abline(v = mean(data_19$dam), col = "black", lty = 2)
 plot(dam_18_monthly, type = "l",
-    col = "blue",
+    col = "#009687",
     main = "Monthly mean of dam in 2018 and 2019",
     xlab = "Month", ylab = "Dam",
     lwd = 5)
-lines(dam_19_monthly, col = "red", lwd = 5)
+lines(dam_19_monthly, col = "#FB4B41", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
-    col = c("blue", "red"), lty = 1, cex = 0.8,
+    col = c("#009687", "#FB4B41"), lty = 1, cex = 0.8,
     lwd = 5
 )
 plot(dam_18_weekday, type = "l",
-    col = "blue",
+    col = "#009687",
     main = "Dayly mean of dam in 2018 and 2019",
     xlab = "Day", ylab = "Dam",
     lwd = 5)
-lines(dam_19_weekday, col = "red", lwd = 5)
+lines(dam_19_weekday, col = "#FB4B41", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
-    col = c("blue", "red"), lty = 1, cex = 0.8,
+    col = c("#009687", "#FB4B41"), lty = 1, cex = 0.8,
     lwd = 5
 )
 plot(dam_18_hourly, type = "l",
-    col = "blue",
+    col = "#009687",
     main = "Hourly mean of dam in 2018 and 2019",
     xlab = "Hour", ylab = "Dam",
     lwd = 5)
-lines(dam_19_hourly, col = "red", lwd = 5)
+lines(dam_19_hourly, col = "#FB4B41", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
-    col = c("blue", "red"), lty = 1, cex = 0.8,
+    col = c("#009687", "#FB4B41"), lty = 1, cex = 0.8,
     lwd = 5
 )
 
