@@ -86,6 +86,7 @@ par(mfcol = c(2, 2))
 boxplot(data_18$dam, data_19$dam, names = c("2018", "2019"),
     horizontal = TRUE,
     main = "Boxplot of dam in 2018 and 2019",
+    cex.main = 2.5,
     xlab = "Year", ylab = "Dam", col = c("#009687", "#FB4B41")
 )
 legend("topleft", legend = c("2018", "2019"),
@@ -97,6 +98,7 @@ abline(v = mean(data_19$dam), col = "black", lty = 2)
 plot(dam_18_monthly, type = "l",
     col = "#009687",
     main = "Monthly mean of dam in 2018 and 2019",
+    cex.main = 2.5,
     xlab = "Month", ylab = "Dam",
     lwd = 5)
 lines(dam_19_monthly, col = "#FB4B41", lwd = 5)
@@ -106,7 +108,8 @@ legend("topleft", legend = c("2018", "2019"),
 )
 plot(dam_18_weekday, type = "l",
     col = "#009687",
-    main = "Dayly mean of dam in 2018 and 2019",
+    main = "Daily mean of dam in 2018 and 2019",
+    cex.main = 2.5,
     xlab = "Day", ylab = "Dam",
     lwd = 5)
 lines(dam_19_weekday, col = "#FB4B41", lwd = 5)
@@ -117,6 +120,7 @@ legend("topleft", legend = c("2018", "2019"),
 plot(dam_18_hourly, type = "l",
     col = "#009687",
     main = "Hourly mean of dam in 2018 and 2019",
+    cex.main = 2.5,
     xlab = "Hour", ylab = "Dam",
     lwd = 5)
 lines(dam_19_hourly, col = "#FB4B41", lwd = 5)
