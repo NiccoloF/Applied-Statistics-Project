@@ -89,10 +89,6 @@ boxplot(data_18$dam, data_19$dam, names = c("2018", "2019"),
     cex.main = 2.5,
     xlab = "Year", ylab = "Dam", col = c("#009687", "#FB4B41")
 )
-legend("topleft", legend = c("2018", "2019"),
-    col = c("#009687", "#FB4B41"), lty = 1, cex = 0.8,
-    lwd = 5
-)
 abline(v = mean(data_18$dam), col = "black", lty = 2)
 abline(v = mean(data_19$dam), col = "black", lty = 2)
 plot(dam_18_monthly, type = "l",
@@ -125,6 +121,19 @@ plot(dam_18_hourly, type = "l",
     lwd = 5)
 lines(dam_19_hourly, col = "#FB4B41", lwd = 5)
 legend("topleft", legend = c("2018", "2019"),
+    col = c("#009687", "#FB4B41"), lty = 1, cex = 0.8,
+    lwd = 5
+)
+
+# print the dam of 2018 and 2019 and the gas price
+x11()
+plot(data_18_19$dam, type = "l",
+    col = "#009687",
+    main = "Dam and gas price in 2018 and 2019",
+    cex.main = 2.5
+)
+lines(data_18_19$gas, col = "#FB4B41", lwd = 5)
+legend("topleft", legend = c("Dam", "Gas price"),
     col = c("#009687", "#FB4B41"), lty = 1, cex = 0.8,
     lwd = 5
 )
@@ -171,6 +180,8 @@ axis(1,
     at = seq_len(ncol(data_18_19)),
     labels = seq_len(ncol(data_18_19)), las = 2
 )
+
+
 
 # scale the data
 data_18_19_sd <- scale(data_18_19)
