@@ -1,7 +1,6 @@
 ################################################################################
 #-------------------FORECASTING DAY AHEAD ELETTRICITY PRICES--------------------
 ################################################################################
-
 library(ggplot2)
 library(GGally)
 library(tidyverse)
@@ -28,17 +27,18 @@ library(tseries)
 library(FinTS)
 library(fGarch)
 library(rugarch)
+library(randomForestSRC)
 
+setwd("/Users/niccoloferesini/Desktop/Applied-Statistics-Project")
 ########################################################
 ### loading dataset and selecting desired time window ###
 ########################################################
-data <- read.table('ml_data.csv',header = T, sep=",")
+data <- read.table('Data_set/ml_data.csv',header = T, sep=",",row.names = 1)
 summary(data)
 head(data)
 data <- data[1:17520,]   # taking only 2018 and 2019 
+head(data)
 summary(data)
-data <- data[,-1]        # removes the fist colunm since it is repetitive 
-
 
 ######################################################
 ######## Graphical exploration of the dataset #########
@@ -139,6 +139,7 @@ for (i in 1:length(data$month)) {
 data$season=season
 rm(season,i)
 data=data[,-4]    # remove month
+length(names(data))
 # at this point the dataset should have 15 variables
 
 # re-plotting correlation with new dataset
@@ -164,25 +165,42 @@ data$season=as.factor(data$season)
 ############# Fitting a Linear Model #####################
 ##########################################################
 
+train <- data
+
 fit_lm <- lm(dam ~ Forecasted_load + hour + geothermal + hydro +
                    pv+self.consuption + gas_price + thermal + peak +
-                   weekend, data = as.data.frame(data) )
+                   weekend, data = as.data.frame(train) )
+summary(fit_lm)
+fit_lm <- step(fit_lm,direction = "both") # OK
 
 hist(fit_lm$residuals)
 #Checking hypothesis
 mean(fit_lm$residuals)    #1) Zero mean
 quartz() #x11()
-plot(fit_lm$residuals)    #2) Homoschedastic
+plot(fit_lm$fitted.values,fit_lm$residuals,pch = 19
+     ,xlab = "Y_hat",ylab = "eps")    #2) Homoschedastic
+abline(v = 110,col = "blue",lty =2)
+
+# compute Cook Distance and remove outliers 
+cook.distance <- cooks.distance(fit_lm)
+train <- train[-which(cook.distance > 4/nrow(train)),]
+fit_lm <- lm(dam ~ Forecasted_load + hour + geothermal + hydro +
+               pv+self.consuption + gas_price + thermal + peak +
+               weekend, data = as.data.frame(train) )
+summary(fit_lm)
+
 quartz() #x11()           #3)Correlation
-plot(fit_lm$residuals[1:length(fit_lm$residuals)-1],fit_lm$residuals[2:length(fit_lm$residuals)])
+plot(fit_lm$residuals[1:length(fit_lm$residuals)-1],fit_lm$residuals[2:length(fit_lm$residuals)]
+     ,xlab = "eps(t-1)",ylab = "eps(t)")
+
+library(ggpubr)   #4) Normality 
 quartz() #x11()
-qqnorm(fit_lm$residuals)  #4)Normality
-qqline(fit_lm$residuals)
+quartz()
+ggqqplot(fit_lm$residuals)
 
 graphics.off()
 # the assumptions are not verified --> we cannot use this model to make confidence intervals
 # We try to improve our model by using autoregressive models/ dynamical models 
-
 
 
 # visualize hypothetical correlation with a randomic uniform sample 
@@ -191,21 +209,20 @@ data$year = c(rep(2018,8760) , rep(2019,8760))
 quartz()
 par(mfrow=c(2,2))
 plot(data$dam[rand_sel],data$Forecasted_load[rand_sel], col = (data$year[rand_sel]-2016),
-     main = "Price vs Forecasted load", xlab = "Price", ylab = "Forecasted load", lwd= 2)
+     main = "Price vs Forecasted load", xlab = "Price", ylab = "Forecasted load", lwd= 2,pch=19,cex=1)
 # thermal vs price 
 plot(data$dam[rand_sel],data$thermal[rand_sel], col = (data$year[rand_sel]-2016),
-     main = "Price vs Thermal", xlab = "Price", ylab = "thermal", lwd= 2)
+     main = "Price vs Thermal", xlab = "Price", ylab = "thermal", lwd= 2,pch=19,cex=1)
 # peak vs price
 plot(data$dam[rand_sel],data$peak[rand_sel], col = (data$year[rand_sel]-2016),
-     main = "Price vs Peak", xlab = "Price", ylab = "Peak", lwd= 2)
+     main = "Price vs Peak", xlab = "Price", ylab = "Peak", lwd= 2,pch=19,cex=1)
 # peak vs gas price 
 plot(data$dam[rand_sel],data$gas_price[rand_sel], col = (data$year[rand_sel]-2016),
-     main = "Price vs Gas Price", xlab = "Price", ylab = "Gas Price", lwd= 2)
+     main = "Price vs Gas Price", xlab = "Price", ylab = "Gas Price", lwd= 2,pch=19,cex=1)
 
 graphics.off()
 
 # improve linear model 
-
 
 # plot fitted values vs true values 
 quartz()
@@ -240,14 +257,14 @@ sctest(fs.dam) # Chow-test
 #  very low p-value (e-16) ==>we reject the null hypotesis: there is only one model
 #  we conclude that the relationship between the variables in the regression models changes across time 
 
+library(urca)
 # Check the stationarity of dam and diff_dam with:
 # Dickey-Fuller test    (  H0: trend   vs   H1: not trend / stationarity)
 summary(ur.df(dam.ts))         #p-value: < 2.2e-16       (alternative command adf.test(dam)$p.value)
 summary(ur.df(diff_dam.ts))        # p-value: < 2.2e-16 note the test statistic is much higher -> smaller p-value
 # because of of the low p-value we can reject the null hypothesis H0, so we can assume the stationarity (not unit root)
-# can use directly from now just dam prices -> no need to use diff_dam
+# can use directly from now on dam prices -> no need to use diff_dam
 
-library(urca)
 # in alternative: ERS unit root test ( H0: Non-stationary vs H1: stationary )
 price.urers <- ur.ers(dam.ts, type="P-test", model="trend")
 summary(price.urers) # Cannot reject H0 therefore non stationary process! p-value of 0.08 not too far from 0.05
@@ -512,7 +529,6 @@ spec = ugarchspec(mean.model = list(armaOrder = c(0,0)),
 
 # To do List :
 
-
 # understand for prediction 24 step ahead vs 24 different models
 # take into account the weekends and treat them accordingly, most of the errors is there 
 # better understanding hypothesis of every test used and implications
@@ -529,3 +545,41 @@ spec = ugarchspec(mean.model = list(armaOrder = c(0,0)),
 
 # (for applied) regression trees
 
+# Random Forest 
+library(randomForest)
+set.seed(12345)
+train_index <- which(rownames(data) < "2019-06-01 00:00:00")
+RFtrain <- data[train_index,]
+RFtest <- data[-train_index,]
+randomF2 <- randomForest(dam~.,data = RFtrain,ntree=150)
+quartz()
+plot(randomF2)
+prediction <- predict(randomF2,RFtest)
+
+mse <- mean((RFtest$dam - prediction)^2)
+mse
+
+quartz()
+par(mfrow = c(3,1))
+plot(RFtest$dam[1:24],type="l",main="Random Forest ", ylab = "Price", xlab= "Time",lwd=2,col="blue")
+lines(prediction[1:24],type="l",lwd=2,col="red")
+legend('topright',legend = c('True Value',"Fitted Value"),col=c('blue','red'),lty = 1
+       ,cex=1,lwd=5)
+plot(RFtest$dam[1:24],type="l",main="Linear Regression", ylab = "Price", xlab= "Time",lwd=2,col="blue")
+lines(fit_lm$fitted.values[1:24],type="l",lwd=2,col="red")
+legend('topright',legend = c('True Value',"Fitted Value"),col=c('blue','red'),lty = 1
+       ,cex=1,lwd=5)
+
+# XGBOOST Regression
+library("quantmod")
+library("gbm")
+xgb <- gbm(dam~.,data = RFtrain,distribution = 'gaussian',n.trees = 1000)
+xgb$train.error
+prediction <- predict(xgb,RFtest)
+
+plot(RFtest$dam[1:24],type="l",main="Gradient Boosting Regression", ylab = "Price",
+     xlab= "Time",lwd=2,col="blue")
+lines(prediction[1:24],type="l",lwd=2,col="red")
+legend('topright',legend = c('True Value',"Fitted Value"),col=c('blue','red'),lty = 1
+       ,cex=1,lwd=5)
+grapichs.off()
