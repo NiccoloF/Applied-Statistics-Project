@@ -1,9 +1,5 @@
 ################################################################################
-#-------------------FORECASTING DAY AHEAD ELETTRICITY PRICES--------------------
-################################################################################
-
-################################################################################
-#-------------------FORECASTING DAY AHEAD ELETTRICITY PRICES--------------------
+#-------------------FORECASTING DAY AHEAD ELECTRICITY PRICES--------------------
 ################################################################################
 
 library(ggplot2)
@@ -111,7 +107,21 @@ rm( price_daily_2018,price_daily_2019,
 
 #removing less significant covariates 
 data<-data[,-c(2,3,4,5,6,7,8,9)]   # removing import/ export 
-data<-data[,-4]                    # removing day (the day of the month is not relevant)
+# is the day of the month significant? e.g. end of the month etc.
+fit_monthday <- aov(data$dam ~ data$day)
+summary.aov(fit_monthday)
+# turns out it's not, let's try with a complete two-ways model
+fit_monthday2 <- aov(data$dam ~ data$day + data$month + data$day:data$month)
+summary.aov(fit_monthday2)
+# data<-data[,-4]                    # removing day (the day of the month is not relevant)
+# PROVO A NON RIMUOVERE DAY OF THE MONTH
+# "In generale, non è sempre opportuno eliminare una variabile solo perché non
+# risulta significativa da sola. In questo caso, considerando che l'interazione 
+# tra le due variabili risulta significativa, eliminare la covariata dayofmonth 
+# potrebbe comportare una perdita di informazione importante, nonché una perdita 
+# di potere statistico nella modellizzazione della variabile di risposta. 
+# Pertanto, è consigliabile conservare tutte le variabili significative nel modello."
+# -> NEL DUBBIO LA LASCIO POI VEDIAMO L'R QUADRO ADJ
 summary(data)
 
 #hydro, pv, self.consuption --> high correlation between 9 and 10 --> take the mean 
@@ -121,8 +131,8 @@ data$hydro=(data$hydro10+data$hydro9)/2
 data$pv=(data$pv10+data$pv9)/2
 data$self.consuption=(data$self.consumption9+data$self.consumption10)/2
 data$wind=(data$wind10+data$wind9)/2
-data<-data[,-c(5,6,7,8,9,10,11,12,13,14,15,16)] # removing 9 and 10 
-
+# data<-data[,-c(5,6,7,8,9,10,11,12,13,14,15,16)] # removing 9 and 10 
+data <- data[,-c(6,7,8,9,10,11,12,13,14,15,16,17)] # removing 9 and 10
 #Creating new variable weekend
 data$weekend<-ifelse(data$weekday==0|data$weekday==6,1,0)
 
@@ -142,8 +152,12 @@ for (i in 1:length(data$month)) {
 }
 data$season=season
 rm(season,i)
-data=data[,-4]    # remove month
-# at this point the dataset should have 15 variables
+# data=data[,-4]    # remove month
+# data = data[,-5] # remove month leave day of month
+                 # se tolgo il month ha ancora senso parlare di day of month??
+                 # vabbè ma a sto punto non tolgo manco quello
+# at this point the dataset should have 15 variables (16 including the day of month)
+                                                   # (17 including day and month)
 
 # re-plotting correlation with new dataset
 corr_data <- cor(data)
@@ -159,6 +173,9 @@ data$hour=as.factor(data$hour)
 data$weekend=as.factor(data$weekend)
 data$season=as.factor(data$season)
 data$weekday=as.factor(data$weekday)
+# con day of month e month
+data$day = as.factor(data$day)
+data$month = as.factor(data$month)
 
 ##########################################################
 ######################  ANOVA  ###########################
