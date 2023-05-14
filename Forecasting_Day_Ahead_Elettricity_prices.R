@@ -488,10 +488,53 @@ rm(g,n,ng,Ps,treat,Var,SSres,S,Mediag,alpha,h,i,j,k,ind,ICrange)
 ##########################################################
 ############# Fitting a Linear Model #####################
 ##########################################################
-
+# 1
 fit_lm <- lm(dam ~ Forecasted_load + hour + geothermal + hydro +
                pv+self.consuption + gas_price + thermal + peak +
                weekend, data = as.data.frame(data) )
+summary(fit_lm) # R2_adj = 0.6123
+# 2
+fit_lm <- lm(dam ~ Forecasted_load + hour + geothermal + hydro +
+                   pv + self.consuption + gas_price + thermal + peak +
+                   weekend + day + month, data = as.data.frame(data) )
+summary(fit_lm) # R2_adj = 0.6625
+# 3 con tutti
+fit_lm <- lm(dam ~ Forecasted_load + hour + day + month + peak + valley 
+            + weekday + gas_price + geothermal + thermal + hydro + pv 
+            + self.consuption + wind + weekend + season, data=as.data.frame(data))
+summary(fit_lm) # R2_adj = 0.6776
+# 4 togliendo i meno correlati (guardando la heat map)
+fit_lm <- lm(dam ~ Forecasted_load + hour + day + month + peak + valley + weekday 
+             + gas_price + thermal + self.consuption + weekend + season,
+             data=as.data.frame(data))
+summary(fit_lm) # R2_adj = 0.6529
+# 5 togliendo day e month lasciando solo weekday weekend e season
+fit_lm <- lm(dam ~ Forecasted_load + hour + peak + valley + weekday 
+             + gas_price + thermal + self.consuption + weekend + season,
+             data=as.data.frame(data))
+summary(fit_lm) # R2_adj = 0.632 che merda
+# 6 togliendo weekend
+fit_lm <- lm(dam ~ Forecasted_load + hour + day + month + peak + valley + weekday 
+             + gas_price + thermal + self.consuption + season,
+             data=as.data.frame(data))
+summary(fit_lm) # R2_adj = 0.6529
+# 7 con weekend togliendo weekday
+fit_lm <- lm(dam ~ Forecasted_load + hour + day + month + peak + valley 
+             + gas_price + thermal + self.consuption + weekend + season,
+             data=as.data.frame(data))
+summary(fit_lm) # R2_adj = 0.6373 brutto uguale
+          # tra 6 e 7 meglio 6 cioè weekend non ci interessa (almeno non definito così)
+# 8 togliendo weekend e weekday
+fit_lm <- lm(dam ~ Forecasted_load + hour + day + month + peak + valley
+             + gas_price + thermal + self.consuption + season,
+             data=as.data.frame(data))
+summary(fit_lm) # R2_adj = 0.5954 ooooh orrendo
+        # tolgo weekend lascio weekday
+# 9 tutte tranne weekend
+fit_lm <- lm(dam ~ Forecasted_load + hour + day + month + peak + valley 
+             + weekday + gas_price + geothermal + thermal + hydro + pv 
+             + self.consuption + wind + season, data=as.data.frame(data))
+summary(fit_lm) # R2_adj = 0.6776
 
 hist(fit_lm$residuals)
 #Checking hypothesis
