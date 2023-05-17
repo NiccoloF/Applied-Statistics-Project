@@ -579,6 +579,22 @@ xgb <- gbm(dam~.,data = data,distribution = 'gaussian',n.trees = 1000,
 xgb$train.error
 prediction_xgb <- predict(xgb,RFtest)
 
+library(rsample)      # data splitting 
+library(gbm)          # basic implementation
+library(xgboost)      # a faster implementation of gbm
+library(caret)        # an aggregator package for performing many machine learning models
+library(h2o)          # a java-based platform
+library(pdp)          # model visualization
+library(ggplot2)      # model visualization
+library(lime)         # model visualization
+library(AmesHousing)
+
+set.seed(123)
+#######
+# ames_split <- initial_split(AmesHousing::make_ames(), prop = .75)
+# ames_train <- training(ames_split)
+# ames_test  <- testing(ames_split)
+
 hyper_grid <- expand.grid(
   shrinkage = c(.01, .1, .3),
   interaction.depth = c(1, 3, 5),
@@ -588,8 +604,17 @@ hyper_grid <- expand.grid(
   min_RMSE = 0                     # a place to dump results
 )
 
-train <- data[1:13140,]
-test <- data[13141:17520,]
+hyper_grid2 <- expand.grid(
+  shrinkage = c(.2, .25, .3),
+  interaction.depth = c(3, 4, 5),
+  n.minobsinnode = c(5, 10, 15),
+  bag.fraction = c(.65, 0.7,.85), 
+  optimal_trees = 0,               # a place to dump results
+  min_RMSE = 0                     # a place to dump results
+)
+
+train <- data[1:13236,]
+test <- data[13237:17520,]
 
 # grid search 
 for(i in 1:nrow(hyper_grid)) {
@@ -602,12 +627,13 @@ for(i in 1:nrow(hyper_grid)) {
     formula = dam ~ .,
     distribution = "gaussian",
     data = data,
-    n.trees = 2500,
+    n.trees = 500,
     interaction.depth = hyper_grid$interaction.depth[i],
     shrinkage = hyper_grid$shrinkage[i],
     n.minobsinnode = hyper_grid$n.minobsinnode[i],
     bag.fraction = hyper_grid$bag.fraction[i],
     train.fraction = .75,
+    n.cores = 8
   )
   
   # add min training error and trees to grid
@@ -618,13 +644,20 @@ hyper_grid %>%
   dplyr::arrange(min_RMSE) %>%
   head(10)
 
+xgb <- gbm(dam~. + weekday:gas_price,data = data[1:13236,],distribution = 'gaussian',n.trees = 500,
+           interaction.depth = 5, shrinkage = 0.3,cv.folds = 5,train.fraction = 1,
+           bag.fraction = 0.65,n.minobsinnode = 5)
+prediction_xgb <- predict(xgb,test)
 
+par(mar = c(5, 8, 1, 1))
+summary(
+  xgb, 
+  cBars = 10,
+  method = relative.influence, # also can use permutation.test.gbm
+  las = 2
+)
 
-
-
-
-
-plot(RFtest$dam[1:24],type="l",main="Gradient Boosting Regression", ylab = "Price",
+plot(test[1:24,1],type="l",main="Gradient Boosting Regression", ylab = "Price",
      xlab= "Time",lwd=2,col="blue")
 lines(prediction_xgb[1:24],type="l",lwd=2,col="red")
 legend('topright',legend = c('True Value',"Fitted Value"),col=c('blue','red'),lty = 1
@@ -684,23 +717,6 @@ points(1:n,mse)
 
 
 graphics.off()
-
-
-library(rsample)      # data splitting 
-library(gbm)          # basic implementation
-library(xgboost)      # a faster implementation of gbm
-library(caret)        # an aggregator package for performing many machine learning models
-library(h2o)          # a java-based platform
-library(pdp)          # model visualization
-library(ggplot2)      # model visualization
-library(lime)         # model visualization
-library(AmesHousing)
-
-set.seed(123)
-ames_split <- initial_split(AmesHousing::make_ames(), prop = .7)
-ames_train <- training(ames_split)
-ames_test  <- testing(ames_split)
-
 
 
 
