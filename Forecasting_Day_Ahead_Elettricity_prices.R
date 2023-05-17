@@ -27,7 +27,8 @@ library(tseries)
 library(FinTS)
 library(fGarch)
 library(rugarch)
-library(randomForestSRC)
+library(gbm)
+library(MASS)
 
 setwd("/Users/niccoloferesini/Desktop/Applied-Statistics-Project")
 ########################################################
@@ -412,22 +413,23 @@ bic(fit.1.2.24.48)
 #R^2 più alto per fit24, mentre bic più basso è dato da fit1 e fit24
 
 ## try model directly from what we know for prediction
-fit_for_pred <- dynlm(dam.ts  ~ data$weekend + gas_price.ts + thermal.ts + L(dam.ts,24)+ L(dam.ts, 48) + L(dam.ts,168) ) 
+fit_for_pred <- dynlm(dam.ts  ~ data$weekend + gas_price.ts + gas_price.ts:data[,"weekend"] 
+                      + Forecasted_load.ts + Forecasted_load.ts:data[,"weekend"]
+                      + thermal.ts + L(dam.ts,24)+ L(dam.ts, 48) + L(dam.ts,168) ) 
+
+summary(fit_for_pred)
 plot(fit_for_pred$residuals)
 bic(fit_for_pred)
 
 
 quartz()
-par(mfrow=c(1,3))
-plot(fit_for_pred$residuals )
-hist(fit_for_pred$residuals)
-qqnorm(fit_for_pred$residuals)
-qqline(fit_for_pred$residuals, col="red")
+par(mfrow = c(2,2))
+plot(fit_for_pred)
 
 quartz()
 plot(dam.ts[950:1100],type="l",main="True vs Predicted price ", ylab = "Price", xlab= "Time",lwd=1,col="blue")
 lines(fit_for_pred$fitted.values[950:1100],type="l",lwd=1,col="red")
-legend("topright", legend=c("True Values", "Fittet Values"), col=c("blue", "red"),lty=1,lwd=3)
+legend("topright", legend=c("True Values", "Fitted Values"), col=c("blue", "red"),lty=1,lwd=3)
 #  note during the week everything is fine, weekends and mondays behaves differently since they are basted
 #  on previous days... 
 
@@ -547,14 +549,13 @@ spec = ugarchspec(mean.model = list(armaOrder = c(0,0)),
 
 # Random Forest 
 library(randomForest)
-set.seed(12345)
 train_index <- which(rownames(data) < "2019-06-01 00:00:00")
 RFtrain <- data[train_index,]
 RFtest <- data[-train_index,]
-randomF2 <- randomForest(dam~.,data = RFtrain,ntree=150)
+randomF <- randomForest(dam~.,data = RFtrain,ntree=30)
 quartz()
-plot(randomF2)
-prediction <- predict(randomF2,RFtest)
+plot(randomF)
+prediction <- predict(randomF,RFtest)
 
 mse <- mean((RFtest$dam - prediction)^2)
 mse
@@ -571,15 +572,135 @@ legend('topright',legend = c('True Value',"Fitted Value"),col=c('blue','red'),lt
        ,cex=1,lwd=5)
 
 # XGBOOST Regression
-library("quantmod")
 library("gbm")
-xgb <- gbm(dam~.,data = RFtrain,distribution = 'gaussian',n.trees = 1000)
+library("MASS")
+xgb <- gbm(dam~.,data = data,distribution = 'gaussian',n.trees = 1000,
+           interaction.depth = 1, shrinkage = 0.01,cv.folds = 5,train.fraction = 0.7)
 xgb$train.error
-prediction <- predict(xgb,RFtest)
+prediction_xgb <- predict(xgb,RFtest)
+
+hyper_grid <- expand.grid(
+  shrinkage = c(.01, .1, .3),
+  interaction.depth = c(1, 3, 5),
+  n.minobsinnode = c(5, 10, 15),
+  bag.fraction = c(.65, .8, 1), 
+  optimal_trees = 0,               # a place to dump results
+  min_RMSE = 0                     # a place to dump results
+)
+
+train <- data[1:13140,]
+test <- data[13141:17520,]
+
+# grid search 
+for(i in 1:nrow(hyper_grid)) {
+  
+  # reproducibility
+  set.seed(123)
+  
+  # train model
+  gbm.tune <- gbm(
+    formula = dam ~ .,
+    distribution = "gaussian",
+    data = data,
+    n.trees = 2500,
+    interaction.depth = hyper_grid$interaction.depth[i],
+    shrinkage = hyper_grid$shrinkage[i],
+    n.minobsinnode = hyper_grid$n.minobsinnode[i],
+    bag.fraction = hyper_grid$bag.fraction[i],
+    train.fraction = .75,
+  )
+  
+  # add min training error and trees to grid
+  hyper_grid$optimal_trees[i] <- which.min(gbm.tune$valid.error)
+  hyper_grid$min_RMSE[i] <- sqrt(min(gbm.tune$valid.error))
+}
+hyper_grid %>% 
+  dplyr::arrange(min_RMSE) %>%
+  head(10)
+
+
+
+
+
+
 
 plot(RFtest$dam[1:24],type="l",main="Gradient Boosting Regression", ylab = "Price",
      xlab= "Time",lwd=2,col="blue")
-lines(prediction[1:24],type="l",lwd=2,col="red")
+lines(prediction_xgb[1:24],type="l",lwd=2,col="red")
 legend('topright',legend = c('True Value',"Fitted Value"),col=c('blue','red'),lty = 1
        ,cex=1,lwd=5)
 grapichs.off()
+
+# Walk-Forward validation for Random Forest
+set.seed(342423532)
+n <- 3
+index <- sample(10000:17520,size = n)
+mse <- NULL
+quartz()
+par(mfrow = c(n,1))
+for(i in 1:n)
+{
+  train_index <- which(rownames(data) < rownames(data)[index[i]])
+  RFtrain <- data[train_index,]
+  RFtest <- data[-train_index,]
+  randomF <- randomForest(dam~.,data = RFtrain,ntree=100)
+  prediction <- predict(randomF,RFtest)
+  mse <- c(mse,mean((RFtest$dam - prediction)^2))
+  plot(RFtest$dam[1:24],type="l",main="Random Forest ", ylab = "Price", xlab= "Time",lwd=2,col="blue")
+  lines(prediction[1:24],type="l",lwd=2,col="red")
+  legend('topright',legend = c('True Value',"Fitted Value",paste("is_weekend?",RFtest[1,"weekend"]))
+         ,col=c('blue','red','green'),lty = 1
+         ,cex=1,lwd=5)
+}
+quartz()
+matplot(mse,type = "l",main = "WALK-FORWARD-VALIDATION-RANDOM FOREST")
+points(1:n,mse)
+
+# Walk-Forward validation for XGBoost
+set.seed(342423532)
+n <- 3
+index <- sample(10000:17520,size = n)
+mse <- NULL
+quartz()
+par(mfrow = c(n,1))
+for(i in 1:n)
+{
+  train_index <- which(rownames(data) < rownames(data)[index[i]])
+  RFtrain <- data[train_index,]
+  RFtest <- data[-train_index,]
+  xgb <- gbm(dam~.,data = RFtrain,distribution = 'gaussian',n.trees = 1000,
+             interaction.depth = 4, shrinkage = 0.01)
+  prediction <- predict(xgb,RFtest)
+  mse <- c(mse,mean((RFtest$dam - prediction)^2))
+  plot(RFtest$dam[1:24],type="l",main="XGBoost ", ylab = "Price", xlab= "Time",lwd=2,col="blue")
+  lines(prediction[1:24],type="l",lwd=2,col="red")
+  legend('topright',legend = c('True Value',"Fitted Value",paste("is_weekend?",RFtest[1,"weekend"]))
+         ,col=c('blue','red','green'),lty = 1
+         ,cex=1,lwd=5)
+}
+quartz()
+matplot(mse,type = "l",main = "WALK-FORWARD-VALIDATION-XGBOOST")
+points(1:n,mse)
+
+
+graphics.off()
+
+
+library(rsample)      # data splitting 
+library(gbm)          # basic implementation
+library(xgboost)      # a faster implementation of gbm
+library(caret)        # an aggregator package for performing many machine learning models
+library(h2o)          # a java-based platform
+library(pdp)          # model visualization
+library(ggplot2)      # model visualization
+library(lime)         # model visualization
+library(AmesHousing)
+
+set.seed(123)
+ames_split <- initial_split(AmesHousing::make_ames(), prop = .7)
+ames_train <- training(ames_split)
+ames_test  <- testing(ames_split)
+
+
+
+
